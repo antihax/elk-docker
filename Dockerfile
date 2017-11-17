@@ -8,9 +8,6 @@
 # docker run -p 5601:5601 -p 9200:9200 -p 5044:5044 -it --name elk <repo-user>/elk
 
 FROM phusion/baseimage
-MAINTAINER Sebastien Pujadas http://pujadas.net
-ENV REFRESHED_AT 2017-01-13
-
 
 ###############################################################################
 #                                INSTALLATION
@@ -34,7 +31,7 @@ RUN set -x \
  && chmod +x /usr/local/bin/gosu \
  && gosu nobody true \
  && apt-get update -qq \
- && apt-get install -qqy openjdk-8-jdk \
+ && apt-get install -qqy openjdk-8-jdk nmap \
  && apt-get clean \
  && set +x
 
@@ -79,12 +76,12 @@ RUN mkdir ${LOGSTASH_HOME} \
  && groupadd -r logstash -g ${LOGSTASH_GID} \
  && useradd -r -s /usr/sbin/nologin -d ${LOGSTASH_HOME} -c "Logstash service user" -u ${LOGSTASH_UID} -g logstash logstash \
  && mkdir -p /var/log/logstash /etc/logstash/conf.d \
- && chown -R logstash:logstash ${LOGSTASH_HOME} /var/log/logstash /etc/logstash
+ && chown -R logstash:logstash ${LOGSTASH_HOME} /var/log/logstash /etc/logstash \
+ && /opt/logstash/bin/logstash-plugin install logstash-codec-nmap
 
 ADD ./logstash-init /etc/init.d/logstash
 RUN sed -i -e 's#^LS_HOME=$#LS_HOME='$LOGSTASH_HOME'#' /etc/init.d/logstash \
  && chmod +x /etc/init.d/logstash
-
 
 ### install Kibana
 
