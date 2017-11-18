@@ -31,7 +31,7 @@ RUN set -x \
  && chmod +x /usr/local/bin/gosu \
  && gosu nobody true \
  && apt-get update -qq \
- && apt-get install -qqy openjdk-8-jdk nmap \
+ && apt-get install -qqy openjdk-8-jdk bzip2 gcc g++ libssl-dev make \
  && apt-get clean \
  && set +x
 
@@ -104,7 +104,26 @@ ADD ./kibana-init /etc/init.d/kibana
 RUN sed -i -e 's#^KIBANA_HOME=$#KIBANA_HOME='$KIBANA_HOME'#' /etc/init.d/kibana \
  && chmod +x /etc/init.d/kibana
 
+### install nmap
 
+ENV NMAP_VERSION 7.60
+ENV NMAP_HOME /opt/nmap
+ENV NMAP_PACKAGE nmap-${NMAP_VERSION}.tgz
+
+RUN mkdir ${NMAP_HOME} \
+ && curl -O https://nmap.org/dist/${NMAP_PACKAGE} \
+ && tar xzf ${NMAP_PACKAGE} -C ${NMAP_HOME} --strip-components=1 \
+ && rm -f ${NMAP_PACKAGE} \
+ && cd ${NMAP_HOME} \
+ && ./configure \
+ && make \
+ && make install \
+ && cd / \
+ && rm -rf ${NMAP_HOME}
+
+RUN apt purge -qqy bzip2 gcc g++ libssl-dev make \
+ && apt autoremove -qqy \
+ && apt clean -qqy \
 ###############################################################################
 #                               CONFIGURATION
 ###############################################################################
