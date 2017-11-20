@@ -48,7 +48,8 @@ ENV ES_UID 991
 ENV ES_PATH_CONF /etc/elasticsearch
 
 RUN mkdir ${ES_HOME} \
- && curl -O https://artifacts.elastic.co/downloads/elasticsearch/${ES_PACKAGE} \
+
+&& curl -O https://artifacts.elastic.co/downloads/elasticsearch/${ES_PACKAGE} \
  && tar xzf ${ES_PACKAGE} -C ${ES_HOME} --strip-components=1 \
  && rm -f ${ES_PACKAGE} \
  && groupadd -r elasticsearch -g ${ES_GID} \
@@ -78,7 +79,8 @@ RUN mkdir ${LOGSTASH_HOME} \
  && mkdir -p /var/log/logstash /etc/logstash/conf.d \
  && chown -R logstash:logstash ${LOGSTASH_HOME} /var/log/logstash /etc/logstash \
  && /opt/logstash/bin/logstash-plugin install logstash-codec-nmap
-
+ && /opt/logstash/bin/logstash-plugin install logstash-codec-json
+ 
 ADD ./logstash-init /etc/init.d/logstash
 RUN sed -i -e 's#^LS_HOME=$#LS_HOME='$LOGSTASH_HOME'#' /etc/init.d/logstash \
  && chmod +x /etc/init.d/logstash
