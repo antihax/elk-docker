@@ -48,8 +48,7 @@ ENV ES_UID 991
 ENV ES_PATH_CONF /etc/elasticsearch
 
 RUN mkdir ${ES_HOME} \
-
-&& curl -O https://artifacts.elastic.co/downloads/elasticsearch/${ES_PACKAGE} \
+ && curl -O https://artifacts.elastic.co/downloads/elasticsearch/${ES_PACKAGE} \
  && tar xzf ${ES_PACKAGE} -C ${ES_HOME} --strip-components=1 \
  && rm -f ${ES_PACKAGE} \
  && groupadd -r elasticsearch -g ${ES_GID} \
