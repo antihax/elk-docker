@@ -99,7 +99,8 @@ RUN mkdir ${KIBANA_HOME} \
  && groupadd -r kibana -g ${KIBANA_GID} \
  && useradd -r -s /usr/sbin/nologin -d ${KIBANA_HOME} -c "Kibana service user" -u ${KIBANA_UID} -g kibana kibana \
  && mkdir -p /var/log/kibana \
- && chown -R kibana:kibana ${KIBANA_HOME} /var/log/kibana
+ && chown -R kibana:kibana ${KIBANA_HOME} /var/log/kibana \
+ && /opt/kibana/bin/kibana-plugin install x-pack
 
 ADD ./kibana-init /etc/init.d/kibana
 RUN sed -i -e 's#^KIBANA_HOME=$#KIBANA_HOME='$KIBANA_HOME'#' /etc/init.d/kibana \
