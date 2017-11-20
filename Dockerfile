@@ -77,7 +77,7 @@ RUN mkdir ${LOGSTASH_HOME} \
  && useradd -r -s /usr/sbin/nologin -d ${LOGSTASH_HOME} -c "Logstash service user" -u ${LOGSTASH_UID} -g logstash logstash \
  && mkdir -p /var/log/logstash /etc/logstash/conf.d \
  && chown -R logstash:logstash ${LOGSTASH_HOME} /var/log/logstash /etc/logstash \
- && /opt/logstash/bin/logstash-plugin install logstash-codec-nmap
+ && /opt/logstash/bin/logstash-plugin install logstash-codec-nmap \
  && /opt/logstash/bin/logstash-plugin install logstash-codec-json
  
 ADD ./logstash-init /etc/init.d/logstash
