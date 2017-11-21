@@ -157,7 +157,7 @@ RUN chown -R logstash:logstash ${LOGSTASH_HOME}/patterns \
  && chown -R elasticsearch:elasticsearch ${ES_PATH_CONF} \
  && chmod -R +r ${ES_PATH_CONF} \
  && mkdir -p /etc/pki/tls/certs \
- && mkdir /etc/pki/tls/private \
+ && mkdir -p /etc/pki/tls/private \
  && chmod +x /usr/local/bin/start.sh
 
 EXPOSE 5601 9200 9300 5044
