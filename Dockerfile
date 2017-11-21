@@ -20,7 +20,7 @@ ENV GOSU_VERSION 1.8
 ARG DEBIAN_FRONTEND=noninteractive
 RUN set -x \
  && apt-get update -qq \
- && apt-get install -qqy --no-install-recommends ca-certificates curl \
+ && apt-get install -qqy --no-install-recommends ca-certificates curl openjdk-8-jdk bzip2 gcc g++ libssl-dev make \
  && rm -rf /var/lib/apt/lists/* \
  && curl -L -o /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)" \
  && curl -L -o /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc" \
@@ -30,9 +30,8 @@ RUN set -x \
  && rm -r "$GNUPGHOME" /usr/local/bin/gosu.asc \
  && chmod +x /usr/local/bin/gosu \
  && gosu nobody true \
- && apt-get update -qq \
- && apt-get install -qqy openjdk-8-jdk bzip2 gcc g++ libssl-dev make \
  && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* \
  && set +x
 
 
@@ -99,8 +98,7 @@ RUN mkdir ${KIBANA_HOME} \
  && groupadd -r kibana -g ${KIBANA_GID} \
  && useradd -r -s /usr/sbin/nologin -d ${KIBANA_HOME} -c "Kibana service user" -u ${KIBANA_UID} -g kibana kibana \
  && mkdir -p /var/log/kibana \
- && chown -R kibana:kibana ${KIBANA_HOME} /var/log/kibana \
- && /opt/kibana/bin/kibana-plugin install x-pack
+ && chown -R kibana:kibana ${KIBANA_HOME} /var/log/kibana
 
 ADD ./kibana-init /etc/init.d/kibana
 RUN sed -i -e 's#^KIBANA_HOME=$#KIBANA_HOME='$KIBANA_HOME'#' /etc/init.d/kibana \
@@ -121,11 +119,11 @@ RUN mkdir ${NMAP_HOME} \
  && make \
  && make install \
  && cd / \
- && rm -rf ${NMAP_HOME}
-
-RUN apt purge -qqy bzip2 gcc g++ libssl-dev make \
+ && rm -rf ${NMAP_HOME} \
+ && apt purge -qqy bzip2 gcc g++ libssl-dev make \
  && apt autoremove -qqy \
- && apt clean -qqy \
+ && apt clean -qqy
+ 
 ###############################################################################
 #                               CONFIGURATION
 ###############################################################################
@@ -134,15 +132,6 @@ RUN apt purge -qqy bzip2 gcc g++ libssl-dev make \
 
 ADD ./elasticsearch.yml ${ES_PATH_CONF}/elasticsearch.yml
 ADD ./elasticsearch-default /etc/default/elasticsearch
-RUN cp ${ES_HOME}/config/log4j2.properties ${ES_HOME}/config/jvm.options \
-    ${ES_PATH_CONF} \
- && chown -R elasticsearch:elasticsearch ${ES_PATH_CONF} \
- && chmod -R +r ${ES_PATH_CONF}
-
-### configure Logstash
-
-# certs/keys for Beats and Lumberjack input
-RUN mkdir -p /etc/pki/tls/certs && mkdir /etc/pki/tls/private
 ADD ./logstash-beats.crt /etc/pki/tls/certs/logstash-beats.crt
 ADD ./logstash-beats.key /etc/pki/tls/private/logstash-beats.key
 
@@ -151,35 +140,25 @@ ADD ./02-beats-input.conf /etc/logstash/conf.d/02-beats-input.conf
 ADD ./10-syslog.conf /etc/logstash/conf.d/10-syslog.conf
 ADD ./11-nginx.conf /etc/logstash/conf.d/11-nginx.conf
 ADD ./30-output.conf /etc/logstash/conf.d/30-output.conf
-
-# patterns
 ADD ./nginx.pattern ${LOGSTASH_HOME}/patterns/nginx
-RUN chown -R logstash:logstash ${LOGSTASH_HOME}/patterns
-
-# Fix permissions
-RUN chmod -R +r /etc/logstash
-
-### configure logrotate
-
 ADD ./elasticsearch-logrotate /etc/logrotate.d/elasticsearch
 ADD ./logstash-logrotate /etc/logrotate.d/logstash
 ADD ./kibana-logrotate /etc/logrotate.d/kibana
-RUN chmod 644 /etc/logrotate.d/elasticsearch \
- && chmod 644 /etc/logrotate.d/logstash \
- && chmod 644 /etc/logrotate.d/kibana
-
-
-### configure Kibana
-
+ADD ./start.sh /usr/local/bin/start.sh
 ADD ./kibana.yml ${KIBANA_HOME}/config/kibana.yml
 
-
-###############################################################################
-#                                   START
-###############################################################################
-
-ADD ./start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
+RUN chown -R logstash:logstash ${LOGSTASH_HOME}/patterns \
+ && chmod -R +r /etc/logstash \
+ && chmod 644 /etc/logrotate.d/elasticsearch \
+ && chmod 644 /etc/logrotate.d/logstash \
+ && chmod 644 /etc/logrotate.d/kibana \
+ && cp ${ES_HOME}/config/log4j2.properties ${ES_HOME}/config/jvm.options \
+    ${ES_PATH_CONF} \
+ && chown -R elasticsearch:elasticsearch ${ES_PATH_CONF} \
+ && chmod -R +r ${ES_PATH_CONF} \
+ && mkdir -p /etc/pki/tls/certs \
+ && mkdir /etc/pki/tls/private \
+ && chmod +x /usr/local/bin/start.sh
 
 EXPOSE 5601 9200 9300 5044
 VOLUME /var/lib/elasticsearch
